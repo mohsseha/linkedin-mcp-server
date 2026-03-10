@@ -1,6 +1,8 @@
 """Dependency injection factories for MCP tools."""
 
 import asyncio
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from linkedin_mcp_server.drivers.browser import (
     ensure_authenticated,
@@ -11,8 +13,14 @@ from linkedin_mcp_server.scraping import LinkedInExtractor
 
 _browser_lock = asyncio.Lock()
 
-async def get_extractor() -> LinkedInExtractor:
+
+@asynccontextmanager
+async def get_extractor() -> AsyncGenerator[LinkedInExtractor]:
     """Acquire the singleton browser, authenticate, and return a ready extractor.
+
+    The @asynccontextmanager decorator is required so that uncalled_for's
+    DI engine recognises the return value as an AbstractAsyncContextManager
+    and properly enters/exits it, rather than injecting the raw async_generator.
 
     Known LinkedIn exceptions are converted to structured ToolError responses
     via raise_tool_error(); unexpected exceptions propagate as-is.
